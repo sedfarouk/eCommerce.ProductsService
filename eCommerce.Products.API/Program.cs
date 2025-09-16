@@ -1,41 +1,35 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using AutoMapper;
-using eCommerce.Products.API.DatabaseContext;
-using eCommerce.Products.API.Mappers;
+using BusinessLogicLayer;
+using BusinessLogicLayer.DTO;
+using DataAccessLayer;
+using DataAccessLayer.RepositoryContracts;
+using eCommerce.Products.API.ApiEndpoints;
 using eCommerce.Products.API.Middleware;
-using eCommerce.Products.API.Models.DTO;
-using eCommerce.Products.API.Models.Entities;
-using eCommerce.Products.API.Models.Enums;
-using eCommerce.Products.API.Repository;
-using eCommerce.Products.API.RepositoryContracts;
-using eCommerce.Products.API.Validators;
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext to IoC container
-builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnectionString")));
+// Add Data Access Layer and Business Logic Layer services
+builder.Services.AddDataAccessLayer(builder.Configuration);
+builder.Services.AddBusinessLogicLayer();
 
-builder.Services.AddControllers().AddJsonOptions(opt => opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddControllers();
+    // .AddJsonOptions(opt => opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())); // Works for controllers
 
-// Register repository services
-builder.Services.AddTransient<IProductsRepository, ProductsRepository>();
+// For Minimal APIs - adding model binder to read values from JSON to enum
+builder.Services.ConfigureHttpJsonOptions(opt => opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Add auto mapper to IoC
-builder.Services.AddAutoMapper(cfg => {}, typeof(ProductMappingProfile).Assembly);
+// Add FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
 
 // Configure CORS
 builder.Services.AddCors(opt => opt.AddDefaultPolicy(policyBuilder => policyBuilder.WithOrigins("https://localhost:4200")
     .AllowAnyMethod()
     .AllowAnyHeader()
 ));
-
-// Add FluentValidations
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<AddProductRequestValidator>(); // Add AddProductRequestValidator
 
 // Adding Endpoints ApiExplorer (Swagger to use to access endpoints)
 builder.Services.AddEndpointsApiExplorer();
@@ -58,51 +52,8 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var productsGroup = app.MapGroup("/api/products");
-
-productsGroup.MapGet("/", async (IProductsRepository productsRepository) => Results.Ok(await productsRepository.GetAllProducts()));
-
-productsGroup.MapPost("/", async (AddProductRequestDto addProductRequestDto, IProductsRepository productsRepository) =>
-{
-    ProductResponseDto? productResponseDto = await productsRepository.AddProduct(addProductRequestDto);
-        
-    return Results.Ok(productResponseDto);
-});
-
-productsGroup.MapGet("/search/productid/{productId}",
-    async (Guid productId, IProductsRepository productsRepository) =>
-    {
-        ProductResponseDto? searchResult = await productsRepository.GetProductById(productId);
-
-        if (searchResult is null)
-        {
-            return Results.NotFound();
-        }
-        
-        return Results.Ok(searchResult);
-    });
-
-productsGroup.MapGet("/search/{searchString}", async (string searchString, IProductsRepository productsRepository) =>
-{
-    List<ProductResponseDto> matchingProducts = await productsRepository.GetProductsByName(searchString);
-
-    return Results.Ok(matchingProducts);
-});
-
-productsGroup.MapPut("/",
-    async ([FromBody] UpdateProductRequestDto updateProductRequestDto, IProductsRepository productsRepository) =>
-    {
-        await productsRepository.UpdateProduct(updateProductRequestDto);
-
-        return Results.NoContent();
-    });
-
-productsGroup.MapDelete("/{productId}", async (Guid productId, IProductsRepository productsRepository) =>
-{
-    bool isCompleted = await productsRepository.DeleteProduct(productId);
-
-    return Results.Ok(new { isCompleted });
-});
+// Add Minimal API endpoints
+app.MapProductApiEndpoints();
 
 app.MapControllers();
 

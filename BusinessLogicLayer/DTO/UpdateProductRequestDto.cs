@@ -1,11 +1,11 @@
-using eCommerce.Products.API.Models.Enums;
+using BusinessLogicLayer.Enums;
 
-namespace eCommerce.Products.API.Models.DTO;
+namespace BusinessLogicLayer.DTO;
 
 public record UpdateProductRequestDto(
     Guid ProductId,
     string? ProductName,
-    Category Category,
+    CategoryOptions Category,
     int UnitPrice,
     int QuantityInStock)
 {

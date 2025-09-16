@@ -1,8 +1,8 @@
 using AutoMapper;
-using eCommerce.Products.API.Models.DTO;
-using eCommerce.Products.API.Models.Entities;
+using BusinessLogicLayer.DTO;
+using DataAccessLayer.Entities;
 
-namespace eCommerce.Products.API.Mappers;
+namespace BusinessLogicLayer.Mappers;
 
 public class ProductMappingProfile : Profile
 {
