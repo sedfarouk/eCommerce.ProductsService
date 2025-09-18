@@ -26,7 +26,7 @@ builder.Services.ConfigureHttpJsonOptions(opt => opt.SerializerOptions.Converter
 builder.Services.AddFluentValidationAutoValidation();
 
 // Configure CORS
-builder.Services.AddCors(opt => opt.AddDefaultPolicy(policyBuilder => policyBuilder.WithOrigins("https://localhost:4200")
+builder.Services.AddCors(opt => opt.AddDefaultPolicy(policyBuilder => policyBuilder.WithOrigins("http://localhost:4200")
     .AllowAnyMethod()
     .AllowAnyHeader()
 ));
