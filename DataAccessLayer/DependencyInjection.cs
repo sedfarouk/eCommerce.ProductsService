@@ -11,8 +11,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddDataAccessLayer(this IServiceCollection services, IConfiguration configuration)
     {
+        string connectionStringTemplate = configuration.GetConnectionString("PostgresConnectionString")!;
+
+        string connectionString = connectionStringTemplate
+            .Replace("$POSTGRES_HOST",Environment.GetEnvironmentVariable("POSTGRES_HOST"))
+            .Replace("$POSTGRES_PASSWORD", Environment.GetEnvironmentVariable("POSTGRES_PASSWORD"));
+        
         // Add Data Access Layer services to IoC container
-        services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(configuration.GetConnectionString("PostgresConnectionString")));
+        services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(connectionString));
         
         // Register repository services
         services.AddScoped<IProductsRepository, ProductsRepository>();
