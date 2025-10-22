@@ -13,13 +13,11 @@ COPY . .
 WORKDIR "/src/eCommerce.Products.API"
 RUN dotnet build "./eCommerce.Products.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-FROM build AS publish
+FROM build AS publish 
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./eCommerce.Products.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-FROM base AS final
+FROM base AS final  
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENV POSTGRES_HOST=localhost
-ENV POSTGRES_PASSWORD=12345678
 ENTRYPOINT ["dotnet", "eCommerce.Products.API.dll"]
