@@ -9,7 +9,7 @@ public static class ProductApiEndpoints
 {
     public static IEndpointRouteBuilder MapProductApiEndpoints(this IEndpointRouteBuilder endpointRouteBuilder)
     {
-        var productsGroup = endpointRouteBuilder.MapGroup("/api/products");
+        var productsGroup = endpointRouteBuilder.MapGroup("/api/products"); 
         
         productsGroup.MapGet("/", async (IProductsService productsService) => Results.Ok(await productsService.GetProducts()));
 
