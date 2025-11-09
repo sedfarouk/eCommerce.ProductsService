@@ -20,7 +20,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssemblyContaining<AddProductRequestValidator>();
         services.AddValidatorsFromAssemblyContaining<UpdateProductRequestValidator>();
         
-        // services.AddTransient<IRabbitMQPublisher, RabbitMQPublisher>();
+        services.AddTransient<IRabbitMQPublisher, RabbitMQPublisher>();
         
         return services; 
     }

@@ -10,7 +10,7 @@ using FluentValidation.Results;
 
 namespace BusinessLogicLayer.Services;
 
-public class ProductsService(IProductsRepository productsRepository, IMapper mapper, IValidator<AddProductRequestDto> addProductRequestValidator, IValidator<UpdateProductRequestDto> updateProductRequestValidator) : IProductsService
+public class ProductsService(IProductsRepository productsRepository, IMapper mapper, IValidator<AddProductRequestDto> addProductRequestValidator, IValidator<UpdateProductRequestDto> updateProductRequestValidator, IRabbitMQPublisher rabbitMqPublisher) : IProductsService
 {
     public async Task<List<ProductResponseDto>> GetProducts()
     {
@@ -115,13 +115,13 @@ public class ProductsService(IProductsRepository productsRepository, IMapper map
             return null;
         }
         
-        // if (isProductNameChanged)
-        // {
-        //     string routingKey = "product.update.name";
-        //     ProductNameUpdateMessage message = new ProductNameUpdateMessage(ProductId: updatedProduct!.ProductId, NewName: updatedProduct.ProductName);
-        //         
-        //     rabbitMqPublisher.Publish<ProductNameUpdateMessage>(routingKey: routingKey, message: message);
-        // }
+        if (isProductNameChanged)
+        {
+            string routingKey = "product.update.name";
+            ProductNameUpdateMessage message = new ProductNameUpdateMessage(ProductId: updatedProduct!.ProductId, NewName: updatedProduct.ProductName);
+                
+            rabbitMqPublisher.Publish<ProductNameUpdateMessage>(routingKey: routingKey, message: message);
+        }
 
         return mapper.Map<ProductResponseDto>(updatedProduct);
     }
