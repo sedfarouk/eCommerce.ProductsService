@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using BusinessLogicLayer.DTO;
+using BusinessLogicLayer.RabbitMQ;
 using BusinessLogicLayer.ServiceContracts;
 using DataAccessLayer.Entities;
 using DataAccessLayer.RepositoryContracts;
@@ -9,7 +10,7 @@ using FluentValidation.Results;
 
 namespace BusinessLogicLayer.Services;
 
-public class ProductsService(IProductsRepository productsRepository, IMapper mapper, IValidator<AddProductRequestDto> addProductRequestValidator, IValidator<UpdateProductRequestDto> updateProductRequestValidator) : IProductsService
+public class ProductsService(IProductsRepository productsRepository, IMapper mapper, IValidator<AddProductRequestDto> addProductRequestValidator, IValidator<UpdateProductRequestDto> updateProductRequestValidator, IRabbitMQPublisher rabbitMqPublisher) : IProductsService
 {
     public async Task<List<ProductResponseDto>> GetProducts()
     {
@@ -101,12 +102,23 @@ public class ProductsService(IProductsRepository productsRepository, IMapper map
 
             throw new ArgumentException(errors);
         }
+        
+        // Check if product name changed
+        bool isProductNameChanged = updateProductRequestDto.ProductName != existingProduct.ProductName;
 
         Product? updatedProduct = await productsRepository.UpdateProduct(existingProduct);
-
+        
         if (updatedProduct is null)
         {
             return null;
+        }
+        
+        if (isProductNameChanged)
+        {
+            string routingKey = "product.update.name";
+            ProductNameUpdateMessage message = new ProductNameUpdateMessage(ProductId: updatedProduct!.ProductId, NewName: updatedProduct.ProductName);
+                
+            rabbitMqPublisher.Publish<ProductNameUpdateMessage>(routingKey: routingKey, message: message);
         }
 
         return mapper.Map<ProductResponseDto>(updatedProduct);
